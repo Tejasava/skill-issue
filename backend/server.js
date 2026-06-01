@@ -86,6 +86,35 @@ app.use(limiter);
 // Static uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Health check routes
+app.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'Backend is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'API is working',
+    timestamp: new Date().toISOString(),
+    availableEndpoints: {
+      auth: '/api/auth',
+      users: '/api/users',
+      exchanges: '/api/exchanges',
+      chat: '/api/chat',
+      friends: '/api/friends',
+      events: '/api/events',
+      admin: '/api/admin',
+      communities: '/api/communities',
+      projects: '/api/projects'
+    }
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -96,6 +125,15 @@ app.use('/api/events', eventRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/communities', communityRoutes);
 app.use('/api/projects', projectRoutes);
+
+// 404 handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({
+    status: 'error',
+    message: 'Route not found',
+    path: req.originalUrl
+  });
+});
 
 // Error handler
 app.use(errorHandler);
