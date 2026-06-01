@@ -25,9 +25,22 @@ const app = express();
 const server = http.createServer(app);
 
 // Socket.io attach
+const allowedOrigins = [
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'http://localhost:5001',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:8080',
+];
+
+// Add CLIENT_URL if set in environment
+if (process.env.CLIENT_URL && !allowedOrigins.includes(process.env.CLIENT_URL)) {
+  allowedOrigins.push(process.env.CLIENT_URL);
+}
+
 const io = require('socket.io')(server, {
   cors: {
-    origin: ['http://localhost:8080', 'http://localhost:3000', process.env.CLIENT_URL || 'http://localhost:3000'],
+    origin: allowedOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   }
@@ -54,21 +67,29 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedPatterns = [
+    // Allow requests with no origin (like mobile apps or Postman)
+    if (!origin) return callback(null, true);
+    
+    const allowedOrigins = [
       /^http:\/\/localhost(:\d+)?$/,
       /^http:\/\/127\.0\.0\.1(:\d+)?$/,
       /^http:\/\/10\.\d+\.\d+\.\d+(:\d+)?$/,
-      process.env.CLIENT_URL
+      /^https?:\/\/.*\.vercel\.app$/,
+      /^https?:\/\/.*\.onrender\.com$/,
     ];
     
-    if (!origin || allowedPatterns.some(pattern => {
+    const isAllowed = allowedOrigins.some(pattern => {
       if (typeof pattern === 'string') {
         return pattern === origin;
       }
       return pattern.test(origin);
-    })) {
+    }) || (process.env.CLIENT_URL && process.env.CLIENT_URL === origin);
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
+      // Log rejected origins for debugging
+      console.warn(`CORS: Rejected origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
