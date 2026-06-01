@@ -1,9 +1,9 @@
 /**
  * API utility for making requests to the backend
- * Uses relative URLs to work with the Vite proxy
+ * Uses environment variable for production, relative URL for development
  */
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api';
 
 export interface FetchOptions extends RequestInit {
   token?: string;
